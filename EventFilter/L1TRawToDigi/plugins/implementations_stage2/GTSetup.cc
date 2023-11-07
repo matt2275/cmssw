@@ -45,6 +45,7 @@ namespace l1t {
         res[{1, 1}] = {gt_muon_packer,
                        PackerFactory::get()->make("stage2::GTEGammaPacker"),
                        PackerFactory::get()->make("stage2::GTEtSumPacker"),
+                       PackerFactory::get()->make("stage2::GTEtSumZDCPacker"),
                        PackerFactory::get()->make("stage2::GTJetPacker"),
                        PackerFactory::get()->make("stage2::GTTauPacker"),
                        PackerFactory::get()->make("stage2::GlobalAlgBlkPacker"),
