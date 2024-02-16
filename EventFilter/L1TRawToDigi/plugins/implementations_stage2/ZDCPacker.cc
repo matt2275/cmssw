@@ -18,6 +18,7 @@ namespace l1t {
 
       for (int i = ZDCSums->getFirstBX(); i <= ZDCSums->getLastBX(); ++i) {
         int zdc_mask = 0x3FF;
+        uint32_t  empty_word = 0;
         uint32_t zdcm_word = 0;
         uint32_t zdcp_word = 0;
 
@@ -29,7 +30,7 @@ namespace l1t {
           if (j->getType() == l1t::EtSum::kZDCP)
             zdcp_word |= word;
         }
-
+        load.push_back(empty_word);
         load.push_back(zdcm_word);
         load.push_back(zdcp_word);
 
@@ -45,5 +46,5 @@ namespace l1t {
   }  // namespace stage2
 }  // namespace l1t
 
-DEFINE_L1T_PACKER(l1t::stage2::CaloEtSumZDCPacker);
+// DEFINE_L1T_PACKER(l1t::stage2::CaloEtSumZDCPacker);
 DEFINE_L1T_PACKER(l1t::stage2::GTEtSumZDCPacker);

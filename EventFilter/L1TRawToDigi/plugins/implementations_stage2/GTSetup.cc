@@ -30,6 +30,7 @@ namespace l1t {
       desc.addOptional<edm::InputTag>("JetInputTag")->setComment("for stage2");
       desc.addOptional<edm::InputTag>("TauInputTag")->setComment("for stage2");
       desc.addOptional<edm::InputTag>("EtSumInputTag")->setComment("for stage2");
+      desc.addOptional<edm::InputTag>("EtSumZDCInputTag")->setComment("for stage2");
     }
 
     PackerMap GTSetup::getPackers(int fed, unsigned int fw) {

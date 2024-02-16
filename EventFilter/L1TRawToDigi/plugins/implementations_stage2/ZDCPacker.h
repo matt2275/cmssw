@@ -15,10 +15,10 @@ namespace l1t {
     public:
       GTEtSumZDCPacker() : ZDCPacker(142) {}
     };
-    class CaloEtSumZDCPacker : public ZDCPacker {
-    public:
-      CaloEtSumZDCPacker() : ZDCPacker(143) {}
-    };
+    // class CaloEtSumZDCPacker : public ZDCPacker {
+    // public:
+      // CaloEtSumZDCPacker() : ZDCPacker(143) {}
+    // };
 
   }  // namespace stage2
 }  // namespace l1t
