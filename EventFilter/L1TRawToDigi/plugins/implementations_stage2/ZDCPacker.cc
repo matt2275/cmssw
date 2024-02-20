@@ -18,7 +18,7 @@ namespace l1t {
 
       for (int i = ZDCSums->getFirstBX(); i <= ZDCSums->getLastBX(); ++i) {
         int zdc_mask = 0x3FF;
-        uint32_t  empty_word = 0;
+        uint32_t empty_word = 0;
         uint32_t zdcm_word = 0;
         uint32_t zdcp_word = 0;
 
@@ -35,8 +35,7 @@ namespace l1t {
         load.push_back(zdcp_word);
 
         //pad with zeros to fill out block; must do this for each BX
-        while (load.size() - nBx * zdc::nOutputFramePerBX <
-               zdc::nOutputFramePerBX )
+        while (load.size() - nBx * zdc::nOutputFramePerBX < zdc::nOutputFramePerBX)
           load.push_back(0);
         nBx++;
       }
