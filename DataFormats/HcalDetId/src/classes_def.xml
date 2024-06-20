@@ -34,7 +34,8 @@
    <version ClassVersion="11" checksum="3710487366"/>
    <version ClassVersion="10" checksum="4165221916"/>
   </class>
-  <class name="HcalZDCDetId" ClassVersion="12">
+  <class name="HcalZDCDetId" ClassVersion="13">
+   <version ClassVersion="13" checksum="1355198445"/>
    <version ClassVersion="12" checksum="3806242743"/>
    <version ClassVersion="11" checksum="3806242743"/>
    <version ClassVersion="10" checksum="927247167"/>
