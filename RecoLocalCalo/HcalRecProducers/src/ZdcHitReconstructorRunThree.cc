@@ -22,9 +22,7 @@ ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const
     : reco_(conf.getParameter<bool>("correctForTimeslew"),
             conf.getParameter<bool>("correctForPhaseContainment"),
             conf.getParameter<double>("correctionPhaseNS"),
-            conf.getParameter<int>("recoMethod"),
-            conf.getParameter<int>("lowGainOffset"),
-            conf.getParameter<double>("lowGainFrac")),
+            conf.getParameter<int>("recoMethod")),
       saturationFlagSetter_(nullptr),
       det_(DetId::Hcal),
       correctTiming_(conf.getParameter<bool>("correctTiming")),
@@ -33,16 +31,10 @@ ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const
       setSaturationFlags_(conf.getParameter<bool>("setSaturationFlags")),
       setTimingTrustFlags_(conf.getParameter<bool>("setTimingTrustFlags")),
       dropZSmarkedPassed_(conf.getParameter<bool>("dropZSmarkedPassed")),
-      ignoreRPD_(conf.getParameter<bool>("ignoreRPD")),
-      matchTrigger_(conf.getParameter<bool>("matchTrigger")),
-      AuxTSvec_(conf.getParameter<std::vector<int> >("AuxTSvec")) {
+      ignoreRPD_(conf.getParameter<bool>("ignoreRPD")) {
          
-  // commented out hcal and  castor digis since not used in RunThree ZDC    
-  // tok_input_hcal = consumes<ZDCDigiCollection>(conf.getParameter<edm::InputTag>("digiLabelhcal"));
-  // tok_input_castor = consumes<ZDCDigiCollection>(conf.getParameter<edm::InputTag>("digiLabelcastor"));
   tok_input_QIE10 = consumes<QIE10DigiCollection>(conf.getParameter<edm::InputTag>("digiLabelQIE10ZDC"));
 
-  std::sort(AuxTSvec_.begin(), AuxTSvec_.end());  // sort vector in ascending TS order
   std::string subd = conf.getParameter<std::string>("Subdetector");
 
   if (setSaturationFlags_) {
@@ -105,7 +97,8 @@ void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& 
         for (auto it = digi->begin(); it != digi->end(); it++) {
       QIE10DataFrame QIE10_i = static_cast<QIE10DataFrame>(*it);     
       HcalZDCDetId cell = QIE10_i.id();
-      if(cell.section() != 1 && cell.section()!= 2 && ignoreRPD_) continue;
+      bool isRPD = cell.section() ==4;
+      if(isRPD && ignoreRPD_)continue;
       if(cell.section() == 1 && cell.channel()> 5) continue; // ignore extra EM channels 
       
       DetId detcell = (DetId)cell; // temporarly removed to avoid issue with RPD
@@ -131,14 +124,9 @@ void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& 
       mySignalTS = myParams->signalTS();
       myNoiseTS = myParams->noiseTS();
       
-      if(matchTrigger_){
-        const HcalPedestal* Peds = conditions->getPedestal(cell);
+        // const HcalPedestal* Peds = conditions->getPedestal(cell);
         const HcalPedestal* effPeds = conditions->getEffectivePedestal(cell);
-        // for(int capid =0; capid<4; capid++) std::cout<<calibWidths.pedestal(capid)<<std::endl;
-        rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations,*effPeds)); 
-      }
-      
-      else rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations));
+        rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations,*effPeds,isRPD)); 
       
       
       //// saturationFlagSetter_ doesn't work with QIE10 so saturation is set in ZDCRecAlgo

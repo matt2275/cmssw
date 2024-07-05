@@ -44,18 +44,10 @@ public:
   ZdcSimpleRecAlgo_Run3(bool correctForTimeslew,
                    bool correctForContainment,
                    float fixedPhaseNs,
-                   int recoMethod,
-                   int lowGainOffset,
-                   double lowGainFrac);
+                   int recoMethod);
   /** Simple constructor for PMT-based detectors */
   ZdcSimpleRecAlgo_Run3(int recoMethod);
   void initPulseCorr(int toadd, const HcalTimeSlew* hcalTimeSlew_delay);
-
-  ZDCRecHit reconstruct(const QIE10DataFrame& digi,
-                        const std::vector<unsigned int>& myNoiseTS,
-                        const std::vector<unsigned int>& mySignalTS,
-                        const HcalCoder& coder,
-                        const HcalCalibrations& calibs) const;
 
 // reco method currently used to match L1 Trigger LUT energy formula                        
   ZDCRecHit reconstruct(const QIE10DataFrame& digi,
@@ -63,16 +55,15 @@ public:
                         const std::vector<unsigned int>& mySignalTS,
                         const HcalCoder& coder,
                         const HcalCalibrations& calibs,
-                        const HcalPedestal& effPeds) const;
+                        const HcalPedestal& effPeds,
+                        const bool& isRPD) const;
 
 private:
   int recoMethod_;
   bool correctForTimeslew_;
   bool correctForPulse_;
   float phaseNS_;
-  // new lowGainEnergy variables
-  int lowGainOffset_;
-  double lowGainFrac_;
+
   std::unique_ptr<HcalPulseContainmentCorrection> pulseCorr_;
 };
 

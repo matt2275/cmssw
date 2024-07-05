@@ -9,14 +9,7 @@ zdcreco = cms.EDProducer(
     correctForTimeslew = cms.bool(False),
     dropZSmarkedPassed = cms.bool(True),
     ignoreRPD = cms.bool(True),
-    matchTrigger = cms.bool(True),
     recoMethod = cms.int32(1),
-    lowGainOffset = cms.int32(1),
-    lowGainFrac = cms.double(8.15),
-
-    # Set Time Samples of all digis to be saved in aux word
-    # ZDC would like the ability to store non-contiguous digis
-    AuxTSvec = cms.vint32([4,5,6,7]),
         
     #Tags for calculating status flags
     # None of the flag algorithms have been implemented for zdc, so these booleans do nothing

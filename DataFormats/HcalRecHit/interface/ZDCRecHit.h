@@ -22,10 +22,10 @@ public:
   
   constexpr inline void setSaturated(const bool sat ) { saturated_ = sat;};
   constexpr inline bool saturated() const { return saturated_; };
-  constexpr inline void setenergySOIp1(const float en) { energySOIp1_ = en;};
+  constexpr inline void setEnergySOIp1(const float en) { energySOIp1_ = en;};
   constexpr inline float energySOIp1() const { return energySOIp1_;};
-  constexpr inline void setTimeSOIp1(const float time) { timeSOIp1_ = time;};
-  constexpr inline float timeSOIp1() const { return timeSOIp1_;};
+  constexpr inline void setRatioSOIp1(const float ratio) { ratioSOIp1_ = ratio;};
+  constexpr inline float ratioSOIp1() const { return ratioSOIp1_;};
   constexpr inline void setTDCtime(const float time) { TDCtime_ = time;};
   constexpr inline float TDCtime() const { return TDCtime_;};
   constexpr inline void setChargeWeightedTime(const float time) { chargeWeightedTime_ = time;};
@@ -34,9 +34,9 @@ public:
  
 private:
   float lowGainEnergy_;
-  float saturated_;
+  bool saturated_;
   float energySOIp1_;
-  float timeSOIp1_;
+  float ratioSOIp1_;
   float TDCtime_;
   float chargeWeightedTime_;
 };

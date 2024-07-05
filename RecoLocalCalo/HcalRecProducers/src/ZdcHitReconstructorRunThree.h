@@ -58,8 +58,7 @@ private:
   DetId::Detector det_;
   int subdet_;
   HcalOtherSubdetector subdetOther_;
-  // edm::EDGetTokenT<ZDCDigiCollection> tok_input_hcal;
-  // edm::EDGetTokenT<ZDCDigiCollection> tok_input_castor;
+  
   edm::EDGetTokenT<QIE10DigiCollection> tok_input_QIE10;
 
 
@@ -71,12 +70,7 @@ private:
 
   bool dropZSmarkedPassed_;  // turn on/off dropping of zero suppression marked and passed digis
   bool ignoreRPD_;         // ignore all channels but EM and HCAL if true
-  bool matchTrigger_;         // match trigger method used in 2023 HI datataking using pedestal widths
-  std::vector<int> AuxTSvec_;
 
-  // new lowGainEnergy variables
-  int lowGainOffset_;
-  double lowGainFrac_;
 
   std::unique_ptr<HcalLongRecoParams> longRecoParams_;  //noiseTS and signalTS from db
 
