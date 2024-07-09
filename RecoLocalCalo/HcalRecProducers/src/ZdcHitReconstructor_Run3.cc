@@ -1,4 +1,4 @@
-#include "ZdcHitReconstructorRunThree.h"
+#include "ZdcHitReconstructor_Run3.h"
 #include "DataFormats/Common/interface/EDCollection.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -16,8 +16,19 @@
 #include "CalibFormats/HcalObjects/interface/HcalCalibrationWidths.h"
 #include "CondFormats/HcalObjects/interface/HcalPedestal.h"
 
+
+namespace zdchelper {                  
+  void setZDCSaturation(ZDCRecHit rh, QIE10DataFrame& digi, int maxValue){
+     unsigned int digisize = digi.size();
+     for(unsigned int i =0; i < digisize; i++){
+        if(digi[i].adc() >= maxValue){rh.setFlagField(1, HcalCaloFlagLabels::ADCSaturationBit); break;}
+     }
+  }
+  
+}
+
 /*  Zdc Hit reconstructor allows for CaloRecHits with status words */
-ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const& conf)
+ZdcHitReconstructor_Run3::ZdcHitReconstructor_Run3(edm::ParameterSet const& conf)
 
     : reco_(conf.getParameter<bool>("correctForTimeslew"),
             conf.getParameter<bool>("correctForPhaseContainment"),
@@ -36,10 +47,10 @@ ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const
   tok_input_QIE10 = consumes<QIE10DigiCollection>(conf.getParameter<edm::InputTag>("digiLabelQIE10ZDC"));
 
   std::string subd = conf.getParameter<std::string>("Subdetector");
-
+  
   if (setSaturationFlags_) {
     const edm::ParameterSet& pssat = conf.getParameter<edm::ParameterSet>("saturationParameters");
-    saturationFlagSetter_ = new HcalADCSaturationFlag(pssat.getParameter<int>("maxADCvalue"));
+    maxADCvalue_ = pssat.getParameter<int>("maxADCvalue");
   }
   if (!strcasecmp(subd.c_str(), "ZDC")) {
     det_ = DetId::Calo;
@@ -50,7 +61,7 @@ ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const
     subdetOther_ = HcalCalibration;
     produces<HcalCalibRecHitCollection>();
   } else {
-    std::cout << "ZdcHitReconstructorRunThree is not associated with a specific subdetector!" << std::endl;
+    std::cout << "ZdcHitReconstructor_Run3 is not associated with a specific subdetector!" << std::endl;
   }
 
   // ES tokens
@@ -61,18 +72,18 @@ ZdcHitReconstructorRunThree::ZdcHitReconstructorRunThree(edm::ParameterSet const
   sevToken_ = esConsumes<HcalSeverityLevelComputer, HcalSeverityLevelComputerRcd>();
 }
 
-ZdcHitReconstructorRunThree::~ZdcHitReconstructorRunThree() { delete saturationFlagSetter_; }
+ZdcHitReconstructor_Run3::~ZdcHitReconstructor_Run3() { delete saturationFlagSetter_; }
 
-void ZdcHitReconstructorRunThree::beginRun(edm::Run const& r, edm::EventSetup const& es) {
+void ZdcHitReconstructor_Run3::beginRun(edm::Run const& r, edm::EventSetup const& es) {
   const HcalTopology& htopo = es.getData(htopoToken_);
   const HcalLongRecoParams& p = es.getData(paramsToken_);
   longRecoParams_ = std::make_unique<HcalLongRecoParams>(p);
   longRecoParams_->setTopo(&htopo);
 }
 
-void ZdcHitReconstructorRunThree::endRun(edm::Run const& r, edm::EventSetup const& es) {}
+void ZdcHitReconstructor_Run3::endRun(edm::Run const& r, edm::EventSetup const& es) {}
 
-void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& eventSetup) {
+void ZdcHitReconstructor_Run3::produce(edm::Event& e, const edm::EventSetup& eventSetup) {
   // get conditions
   const HcalDbService* conditions = &eventSetup.getData(conditionsToken_);
   const HcalChannelQuality* myqual = &eventSetup.getData(qualToken_);
@@ -101,7 +112,7 @@ void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& 
       if(isRPD && ignoreRPD_)continue;
       if(cell.section() == 1 && cell.channel()> 5) continue; // ignore extra EM channels 
       
-      DetId detcell = (DetId)cell; // temporarly removed to avoid issue with RPD
+      DetId detcell = (DetId)cell; 
       
       // check on cells to be ignored and dropped: (rof,20.Feb.09)
       const HcalChannelStatus* mydigistatus = myqual->getValues(detcell.rawId());
@@ -124,16 +135,16 @@ void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& 
       mySignalTS = myParams->signalTS();
       myNoiseTS = myParams->noiseTS();
       
-        // const HcalPedestal* Peds = conditions->getPedestal(cell);
+        // pass the effective pedestals to rec hit since both ped value and width used in subtraction of pedestals
         const HcalPedestal* effPeds = conditions->getEffectivePedestal(cell);
         rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations,*effPeds,isRPD)); 
       
       
-      //// saturationFlagSetter_ doesn't work with QIE10 so saturation is set in ZDCRecAlgo
-      // (rec->back()).setFlags(0);
-      // if (setSaturationFlags_)
-        // saturationFlagSetter_->setSaturationFlag(rec->back(), QIE10_i);
-
+      // saturationFlagSetter_ doesn't work with QIE10
+      // created new function zdchelper::setZDCSaturation to work with QIE10
+      (rec->back()).setFlags(0);
+      if (setSaturationFlags_)
+        zdchelper::setZDCSaturation(rec->back(), QIE10_i, maxADCvalue_);
      }
     // return result
     e.put(std::move(rec));
@@ -142,4 +153,4 @@ void ZdcHitReconstructorRunThree::produce(edm::Event& e, const edm::EventSetup& 
 }  // void HcalHitReconstructor::produce(...)
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(ZdcHitReconstructorRunThree);
+DEFINE_FWK_MODULE(ZdcHitReconstructor_Run3);

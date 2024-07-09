@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 zdcreco = cms.EDProducer(
-    "ZdcHitReconstructorRunThree",
+    "ZdcHitReconstructor_Run3",
     correctionPhaseNS = cms.double(0.0),
     digiLabelQIE10ZDC = cms.InputTag("hcalDigis:ZDC"),
     Subdetector = cms.string('ZDC'),

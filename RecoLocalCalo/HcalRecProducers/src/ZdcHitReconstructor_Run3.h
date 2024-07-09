@@ -1,5 +1,5 @@
-#ifndef ZDCHITRECONSTRUCTORRUNTHREE_H
-#define ZDCHITRECONSTRUCTORRUNTHREE_H 1
+#ifndef ZDCHITRECONSTRUCTOR_RUN3_H
+#define ZDCHITRECONSTRUCTOR_RUN3_H 1
 
 #include <memory>
 
@@ -38,15 +38,15 @@ class HcalChannelQualityRcd;
 class HcalSeverityLevelComputer;
 class HcalSeverityLevelComputerRcd;
 
-/** \class ZdcHitReconstructorRunThree
+/** \class ZdcHitReconstructor_Run3
 	
-    \author E. Garcia - CSU
-    ** Based on HcalSimpleReconstructor.h by J. Mans
+    \author M. Nickel - Kansas
+    ** Based on ZDCHitReconstructor.h by E. Garcia
     */
-class ZdcHitReconstructorRunThree : public edm::stream::EDProducer<> {
+class ZdcHitReconstructor_Run3 : public edm::stream::EDProducer<> {
 public:
-  explicit ZdcHitReconstructorRunThree(const edm::ParameterSet& ps);
-  ~ZdcHitReconstructorRunThree() override;
+  explicit ZdcHitReconstructor_Run3(const edm::ParameterSet& ps);
+  ~ZdcHitReconstructor_Run3() override;
   void beginRun(edm::Run const& r, edm::EventSetup const& es) final;
   void endRun(edm::Run const& r, edm::EventSetup const& es) final;
   void produce(edm::Event& e, const edm::EventSetup& c) final;
@@ -70,7 +70,7 @@ private:
 
   bool dropZSmarkedPassed_;  // turn on/off dropping of zero suppression marked and passed digis
   bool ignoreRPD_;         // ignore all channels but EM and HCAL if true
-
+  int maxADCvalue_;        // max adc value for saturation Flag
 
   std::unique_ptr<HcalLongRecoParams> longRecoParams_;  //noiseTS and signalTS from db
 

@@ -24,7 +24,9 @@ void ZdcSimpleRecAlgo_Run3::initPulseCorr(int toadd, const HcalTimeSlew* hcalTim
         toadd, phaseNS_, false, MaximumFractionalError, hcalTimeSlew_delay);
   }
 }
-namespace ZdcHelper {
+
+// helper functions for pedestal subtraction and noise calculations
+namespace zdchelper {
   inline double subPedestal(const float energy,
                       const float ped,
                       const float width) {
@@ -35,31 +37,22 @@ namespace ZdcHelper {
                       
    // assumes that if noise TS is from pileup, noise TS should be 
    // about 40% of previous energy and only 40% of noiseTS will be subtracted from signal
-  inline double calcNoise(const float energy_0, 
-                      const float energy_1) {
-                         // if(energy_0<=0 || energy_1<=0)return (energy_1);
+  inline double calcNoise(const float energy0, 
+                      const float energy1) {
+                         // if(energy0<=0 || energy1<=0)return (energy1);
                          // // check if noise TS is less than half of previous TS
-                         // else if( energy_0 >= 2*energy_1) return( .4*energy_1); 
-                         // else return(.4*energy_1);
-                         return(.4*energy_1);
+                         // else if( energy0 >= 2*energy1) return( .4*energy1); 
+                         // else return(.4*energy1);
+                         return(.4*energy1);
                       }
-  inline double calcNoiseRPD(const float energy_0, 
-                      const float energy_1) {
-                         // if(energy_0<=0 || energy_1<=0)return (energy_1);
+  inline double calcNoiseRPD(const float energy0, 
+                      const float energy1) {
+                         // if(energy0<=0 || energy1<=0)return (energy1);
                          // // check if noise TS is less than half of previous TS
-                         // else if( energy_0 >= 2*energy_1) return( .4*energy_1); 
-                         // else return(.4*energy_1);
-                         return(.4*energy_1);
+                         // else if( energy0 >= 2*energy1) return( .4*energy1); 
+                         // else return(.4*energy1);
+                         return(.4*energy1);
                       }
-  template <class Digi>                     
-  bool isSaturated(Digi& digi){
-     unsigned int digi_size = digi.size();
-     bool saturated= false;
-     for(unsigned int i =0; i < digi_size; i++){
-        if(digi[i].adc() >= 255){saturated=true; break;}
-     }
-     return saturated;
-  }
   
 }
 
@@ -75,7 +68,6 @@ namespace ZdcSimpleRecAlgoImpl {
     coder.adc2fC(digi, tool);
     // Reads noiseTS and signalTS from database
     int ifirst = mySignalTS[0];
-    //    int n = mySignalTS.size();
     double ampl = 0;
     int maxI = -1;
     double maxA = -1e10;
@@ -101,10 +93,10 @@ namespace ZdcSimpleRecAlgoImpl {
       float width = effPeds.getWidth(capid);
       if (CurrentTS >= digi_size)
         continue;
-      float energy_1 = ZdcHelper::subPedestal(tool[CurrentTS],ped,width); 
-      float energy_0 = 0;
-      if(CurrentTS >0)energy_0 = ZdcHelper::subPedestal(tool[CurrentTS-1],ped,width);  
-      Allnoise += ZdcHelper::calcNoise(energy_0,energy_1);
+      float energy1 = zdchelper::subPedestal(tool[CurrentTS],ped,width); 
+      float energy0 = 0;
+      if(CurrentTS >0)energy0 = zdchelper::subPedestal(tool[CurrentTS-1],ped,width);  
+      Allnoise += zdchelper::calcNoise(energy0,energy1);
       noiseslices++;
     }
     if (noiseslices != 0) {
@@ -123,8 +115,8 @@ namespace ZdcSimpleRecAlgoImpl {
       // float ped = calibs.pedestal(capid);
       float ped = effPeds.getValue(capid);
       float width = effPeds.getWidth(capid);
-      float energy0 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS],ped,width));
-      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS+1],ped,width));
+      float energy0 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS],ped,width));
+      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS+1],ped,width));
       ratioSOIp1 = (energy0>0 && energy1 > 0) ? energy0/energy1 : -1.0;
       ta = energy0 - noise;
       if(ta>0) ampl += ta;
@@ -184,7 +176,7 @@ namespace ZdcSimpleRecAlgoImpl {
     
     
     double tmp_energy = 0;
-    double tmp_TSWeight_Energy = 0;
+    double tmp_TSWeightedEnergy = 0;
     for (int ts = 0; ts < 6; ++ts) {
       if (CurrentTS >= digi_size)
         continue;
@@ -193,28 +185,22 @@ namespace ZdcSimpleRecAlgoImpl {
       // max sure there are no negative values in time calculation
       ta = std::max(0.0,tool[ts]);
       ta *= calibs.respcorrgain(capid);  // fC --> GeV
-      if(ta>0){ tmp_energy += ta; tmp_TSWeight_Energy += (ts+1)*ta;}
+      if(ta>0){ tmp_energy += ta; tmp_TSWeightedEnergy += (ts+1)*ta;}
     }    
 
-    chargeWeightedTime = (tmp_TSWeight_Energy/tmp_energy -1) * 25.0;
+    chargeWeightedTime = (tmp_TSWeightedEnergy/tmp_energy -1) * 25.0;
     auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
-    if(maxI >= 0 && maxI <tool.size()) rh.setSaturated(digi[maxI].adc()>=255);
     rh.setEnergySOIp1(energySOIp1);
     
     
-    if(ZdcHelper::isSaturated(digi)) rh.setFlagField(1, HcalCaloFlagLabels::ADCSaturationBit);
-    float tmp_tdctime = 0;
     if(maxI >= 0 && maxI <tool.size()){
+       float tmp_tdctime = 0;
        // TDC error codes will be 60=-1, 61 = -2, 62 = -3, 63 = -4
-       // if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59)
-
-       // should change tdc values for 63, 62 to more meaningful values usesful for quick analysis currently          
-       if(digi[maxI].le_tdc()==62) tmp_tdctime = -10; 
-       else if(digi[maxI].le_tdc()==63) tmp_tdctime = -30;
+       if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59);
        else tmp_tdctime = maxI* 25. + (digi[maxI].le_tdc() / 2);
+       rh.setTDCtime(tmp_tdctime);
     }
     
-    if(maxI >= 0 && maxI <tool.size())  rh.setTDCtime(tmp_tdctime);
     rh.setChargeWeightedTime(chargeWeightedTime);
     rh.setRatioSOIp1(ratioSOIp1);
     return rh;
@@ -248,7 +234,6 @@ namespace ZdcSimpleRecAlgoImpl {
     double chargeWeightedTime = 0;
     
     double noiseFrac = 97.0/256.0;
-    bool matchTriggerInteger = false;
     
 
     double Allnoise = 0;
@@ -256,7 +241,6 @@ namespace ZdcSimpleRecAlgoImpl {
     int CurrentTS = 0;
     double noise = 0;
     int digi_size = digi.size();
-    // bool isSaturated = false;
     // regular energy (both use same noise)
     for (unsigned int iv = 0; iv < myNoiseTS.size(); ++iv) {
       CurrentTS = myNoiseTS[iv];
@@ -266,7 +250,7 @@ namespace ZdcSimpleRecAlgoImpl {
       float width = effPeds.getWidth(capid);
       if (CurrentTS >= digi_size)
         continue;
-      Allnoise += ZdcHelper::subPedestal(tool[CurrentTS],ped,width)*noiseFrac;
+      Allnoise += zdchelper::subPedestal(tool[CurrentTS],ped,width)*noiseFrac;
       noiseslices++;
     }
     if (noiseslices != 0) {
@@ -282,17 +266,13 @@ namespace ZdcSimpleRecAlgoImpl {
       // float ped = calibs.pedestal(capid);
       float ped = effPeds.getValue(capid);
       float width = effPeds.getWidth(capid);
-      float energy0 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS],ped,width));
-      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS+1],ped,width));
+      float energy0 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS],ped,width));
+      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS+1],ped,width));
       ratioSOIp1 = (energy0>0 && energy1 > 0) ? energy0/energy1 : -1.0;
-    if(matchTriggerInteger){
-      float gain = calibs.respcorrgain(capid);
-      ta = std::min(std::max(0, int(energy0*gain/(50))), 1023) - std::min(std::max(0, int(noise*gain/(50))), 1023);
-    }
-    else{
-      ta = ZdcHelper::subPedestal(tool[CurrentTS],ped,width) - noise;
+      
+      ta = zdchelper::subPedestal(tool[CurrentTS],ped,width) - noise;
       ta *= calibs.respcorrgain(capid);  // fC --> GeV
-    }
+      
       if(ta>0) ampl += ta;
       if (ta > maxA) {
         maxA = ta;
@@ -348,7 +328,7 @@ namespace ZdcSimpleRecAlgoImpl {
     
     
     double tmp_energy = 0;
-    double tmp_TSWeight_Energy = 0;
+    double tmp_TSWeightedEnergy = 0;
     for (int ts = 0; ts < 6; ++ts) {
       if (CurrentTS >= digi_size)
         continue;
@@ -357,28 +337,22 @@ namespace ZdcSimpleRecAlgoImpl {
       // max sure there are no negative values in time calculation
       ta = std::max(0.0,tool[ts]);
       ta *= calibs.respcorrgain(capid);  // fC --> GeV
-      if(ta>0){ tmp_energy += ta; tmp_TSWeight_Energy += (ts+1)*ta;}
+      if(ta>0){ tmp_energy += ta; tmp_TSWeightedEnergy += (ts+1)*ta;}
     }    
 
-    chargeWeightedTime = (tmp_TSWeight_Energy/tmp_energy -1) * 25.0;
+    chargeWeightedTime = (tmp_TSWeightedEnergy/tmp_energy -1) * 25.0;
     auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
-    if(maxI >= 0 && maxI <tool.size()) rh.setSaturated(digi[maxI].adc()>=255);
     rh.setEnergySOIp1(energySOIp1);
     
     
-    if(ZdcHelper::isSaturated(digi)) rh.setFlagField(1, HcalCaloFlagLabels::ADCSaturationBit);
-    float tmp_tdctime = 0;
     if(maxI >= 0 && maxI <tool.size()){
+       float tmp_tdctime = 0;
        // TDC error codes will be 60=-1, 61 = -2, 62 = -3, 63 = -4
-       // if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59)
-
-       // should change tdc values for 63, 62 to more meaningful values usesful for quick analysis currently          
-       if(digi[maxI].le_tdc()==62) tmp_tdctime = -10; 
-       else if(digi[maxI].le_tdc()==63) tmp_tdctime = -30;
+       if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59);
        else tmp_tdctime = maxI* 25. + (digi[maxI].le_tdc() / 2);
+       rh.setTDCtime(tmp_tdctime);
     }
     
-    if(maxI >= 0 && maxI <tool.size())  rh.setTDCtime(tmp_tdctime);
     rh.setChargeWeightedTime(chargeWeightedTime);
     rh.setRatioSOIp1(ratioSOIp1);
     return rh;
@@ -427,10 +401,10 @@ namespace ZdcSimpleRecAlgoImpl {
       float width = effPeds.getWidth(capid);
       if (CurrentTS >= digi_size)
         continue;
-      float energy_1 = ZdcHelper::subPedestal(tool[CurrentTS],ped,width); 
-      float energy_0 = 0;
-      if(CurrentTS >0) energy_0 = ZdcHelper::subPedestal(tool[CurrentTS-1],ped,width);  
-      Allnoise += ZdcHelper::calcNoiseRPD(energy_0,energy_1);
+      float energy1 = zdchelper::subPedestal(tool[CurrentTS],ped,width); 
+      float energy0 = 0;
+      if(CurrentTS >0) energy0 = zdchelper::subPedestal(tool[CurrentTS-1],ped,width);  
+      Allnoise += zdchelper::calcNoiseRPD(energy0,energy1);
       noiseslices++;
     }
     if (noiseslices != 0) {
@@ -448,8 +422,8 @@ namespace ZdcSimpleRecAlgoImpl {
       // float ped = calibs.pedestal(capid);
       float ped = effPeds.getValue(capid);
       float width = effPeds.getWidth(capid);
-      float energy0 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS],ped,width));
-      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,ZdcHelper::subPedestal(tool[CurrentTS+1],ped,width));
+      float energy0 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS],ped,width));
+      if (CurrentTS  < digi_size-1) energy1 = std::max(0.0,zdchelper::subPedestal(tool[CurrentTS+1],ped,width));
       ratioSOIp1 = (energy0>0 && energy1 > 0) ? energy0/energy1 : -1.0;
       ta = energy0 - noise;
       ta *= calibs.respcorrgain(capid);  // fC --> GeV 
@@ -511,7 +485,7 @@ namespace ZdcSimpleRecAlgoImpl {
     
     
     double tmp_energy = 0;
-    double tmp_TSWeight_Energy = 0;
+    double tmp_TSWeightedEnergy = 0;
     for (int ts = 0; ts < 6; ++ts) {
       if (CurrentTS >= digi_size)
         continue;
@@ -520,28 +494,22 @@ namespace ZdcSimpleRecAlgoImpl {
       // max sure there are no negative values in time calculation
       ta = std::max(0.0,tool[ts]);
       ta *= calibs.respcorrgain(capid);  // fC --> GeV
-      if(ta>0){ tmp_energy += ta; tmp_TSWeight_Energy += (ts+1)*ta;}
+      if(ta>0){ tmp_energy += ta; tmp_TSWeightedEnergy += (ts+1)*ta;}
     }    
 
-    chargeWeightedTime = (tmp_TSWeight_Energy/tmp_energy -1) * 25.0;
+    chargeWeightedTime = (tmp_TSWeightedEnergy/tmp_energy -1) * 25.0;
     auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
-    if(maxI >= 0 && maxI <tool.size()) rh.setSaturated(digi[maxI].adc()>=255);
     rh.setEnergySOIp1(energySOIp1);
     
     
-    if(ZdcHelper::isSaturated(digi)) rh.setFlagField(1, HcalCaloFlagLabels::ADCSaturationBit);
-    float tmp_tdctime = 0;
     if(maxI >= 0 && maxI <tool.size()){
+       float tmp_tdctime = 0;
        // TDC error codes will be 60=-1, 61 = -2, 62 = -3, 63 = -4
-       // if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59)
-
-       // should change tdc values for 63, 62 to more meaningful values usesful for quick analysis currently          
-       if(digi[maxI].le_tdc()==62) tmp_tdctime = -10; 
-       else if(digi[maxI].le_tdc()==63) tmp_tdctime = -30;
+       if(digi[maxI].le_tdc()>=60) tmp_tdctime = -1*(digi[maxI].le_tdc() - 59);
        else tmp_tdctime = maxI* 25. + (digi[maxI].le_tdc() / 2);
+       rh.setTDCtime(tmp_tdctime);
     }
     
-    if(maxI >= 0 && maxI <tool.size())  rh.setTDCtime(tmp_tdctime);
     rh.setChargeWeightedTime(chargeWeightedTime);
     rh.setRatioSOIp1(ratioSOIp1);
     return rh;

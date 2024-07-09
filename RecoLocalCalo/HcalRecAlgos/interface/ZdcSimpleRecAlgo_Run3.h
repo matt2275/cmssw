@@ -25,16 +25,9 @@
 
    This class reconstructs RecHits from Digis for ZDC  by addition
    of selected time samples, pedestal subtraction, and gain application. The
-   time of the hit is reconstructed using a weighted peak bin calculation
-   supplemented by precise time lookup table. A consumer of this class also
-   has the option of correcting the reconstructed time for energy-dependent
-   time slew associated with the QIE.
-
-   A sencon method based on a based on a event by event substraction is also
-   implelented. signal = (S4 + S5 - 2*(S1+S2+S3 + S7+S8+S9+S10))*(ft-Gev constant)
-   where SN is the signal in the nth time slice
+   time of the hit is reconstructed using a weighted peak bin calculation.
     
-   \author E. Garcia CSU &  J. Gomez UMD
+   \author M. Nickel Based on ZDCSimpleRecAlgo
 */
 class HcalTimeSlew;
 
