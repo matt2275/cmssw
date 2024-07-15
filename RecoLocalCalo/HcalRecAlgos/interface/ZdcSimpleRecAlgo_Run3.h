@@ -18,31 +18,34 @@
 #include "CalibCalorimetry/HcalAlgos/interface/HcalPulseContainmentCorrection.h"
 #include <memory>
 
-
 #include "DataFormats/HcalDigi/interface/QIE10DataFrame.h"
 
 /** \class ZdcSimpleRecAlgo_Run3
 
    This class reconstructs RecHits from Digis for ZDC  by addition
    of selected time samples, pedestal subtraction, and gain application. The
-   time of the hit is reconstructed using a weighted peak bin calculation.
+   time of the hit is reconstructed using a weighted peak bin calculation
+   supplemented by precise time lookup table. A consumer of this class also
+   has the option of correcting the reconstructed time for energy-dependent
+   time slew associated with the QIE.
+
+   A sencon method based on a based on a event by event substraction is also
+   implelented. signal = (S4 + S5 - 2*(S1+S2+S3 + S7+S8+S9+S10))*(ft-Gev constant)
+   where SN is the signal in the nth time slice
     
-   \author M. Nickel Based on ZDCSimpleRecAlgo
+   \author E. Garcia CSU &  J. Gomez UMD
 */
 class HcalTimeSlew;
 
 class ZdcSimpleRecAlgo_Run3 {
 public:
   /** Full featured constructor for ZDC */
-  ZdcSimpleRecAlgo_Run3(bool correctForTimeslew,
-                   bool correctForContainment,
-                   float fixedPhaseNs,
-                   int recoMethod);
+  ZdcSimpleRecAlgo_Run3(bool correctForTimeslew, bool correctForContainment, float fixedPhaseNs, int recoMethod);
   /** Simple constructor for PMT-based detectors */
   ZdcSimpleRecAlgo_Run3(int recoMethod);
   void initPulseCorr(int toadd, const HcalTimeSlew* hcalTimeSlew_delay);
 
-// reco method currently used to match L1 Trigger LUT energy formula                        
+  // reco method currently used to match L1 Trigger LUT energy formula
   ZDCRecHit reconstruct(const QIE10DataFrame& digi,
                         const std::vector<unsigned int>& myNoiseTS,
                         const std::vector<unsigned int>& mySignalTS,
