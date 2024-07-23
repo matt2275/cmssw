@@ -12,10 +12,7 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalSeverityLevelComputerRcd.h"
 #include "Geometry/CaloTopology/interface/HcalTopology.h"
 
-
-
 #include <iostream>
-
 
 namespace zdchelper {
   void setZDCSaturation(ZDCRecHit rh, QIE10DataFrame& digi, int maxValue) {
@@ -149,14 +146,11 @@ void ZdcHitReconstructor_Run3::produce(edm::Event& e, const edm::EventSetup& eve
 
 }  // void HcalHitReconstructor::produce(...)
 
-
-
-
 void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   // zdcreco
   edm::ParameterSetDescription desc;
   desc.add<double>("correctionPhaseNS", 0.0);
-  desc.add<edm::InputTag>("digiLabelQIE10ZDC", edm::InputTag("hcalDigis","ZDC"));
+  desc.add<edm::InputTag>("digiLabelQIE10ZDC", edm::InputTag("hcalDigis", "ZDC"));
   desc.add<std::string>("Subdetector", "ZDC");
   desc.add<bool>("correctForPhaseContainment", false);
   desc.add<bool>("correctForTimeslew", false);

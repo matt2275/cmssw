@@ -124,7 +124,6 @@ namespace ZdcSimpleRecAlgoImpl {
       }
     }
 
-
     double time = -9999;
     // Time based on regular energy
     ////Cannot calculate time value with max ADC sample at first or last position in window....
@@ -230,7 +229,7 @@ namespace ZdcSimpleRecAlgoImpl {
     double ratioSOIp1 = -1;
     double chargeWeightedTime = 0;
 
-    // out of time pileup fraction; ~40% of noise ts charge will be signal.  
+    // out of time pileup fraction; ~40% of noise ts charge will be signal.
     double ootpuFrac = 97.0 / 256.0;
 
     double Allnoise = 0;
@@ -253,7 +252,7 @@ namespace ZdcSimpleRecAlgoImpl {
     if (noiseslices != 0) {
       noise = (Allnoise) / double(noiseslices);
     }
-    
+
     for (unsigned int ivs = 0; ivs < mySignalTS.size(); ++ivs) {
       CurrentTS = mySignalTS[ivs];
       if (CurrentTS >= digi_size)
@@ -278,7 +277,6 @@ namespace ZdcSimpleRecAlgoImpl {
         maxI = CurrentTS;
       }
     }
-
 
     double time = -9999;
     // Time based on regular energy
@@ -430,7 +428,6 @@ namespace ZdcSimpleRecAlgoImpl {
         maxI = CurrentTS;
       }
     }
-
 
     double time = -9999;
     // Time based on regular energy
