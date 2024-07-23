@@ -19,6 +19,7 @@
 #include "CondFormats/HcalObjects/interface/HcalChannelStatus.h"
 #include "CondFormats/HcalObjects/interface/HcalLongRecoParams.h"
 #include "CondFormats/HcalObjects/interface/HcalLongRecoParam.h"
+#include "CondFormats/HcalObjects/interface/HcalPedestal.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalTimingCorrector.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HBHETimeProfileStatusBitSetter.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HBHETimingShapedFlag.h"
@@ -50,6 +51,7 @@ public:
   void beginRun(edm::Run const& r, edm::EventSetup const& es) final;
   void endRun(edm::Run const& r, edm::EventSetup const& es) final;
   void produce(edm::Event& e, const edm::EventSetup& c) final;
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
   ZdcSimpleRecAlgo_Run3 reco_;

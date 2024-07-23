@@ -71,7 +71,6 @@ namespace ZdcSimpleRecAlgoImpl {
     int maxI = -1;
     double maxA = -1e10;
     double ta = 0;
-    double lowGEnergy = 0;
     double energySOIp1 = 0;
     double ratioSOIp1 = -1.0;
     double chargeWeightedTime = 0;
@@ -100,8 +99,6 @@ namespace ZdcSimpleRecAlgoImpl {
     }
     if (noiseslices != 0) {
       noise = (Allnoise) / double(noiseslices);
-    } else {
-      noise = 0;
     }
 
     for (unsigned int ivs = 0; ivs < mySignalTS.size(); ++ivs) {
@@ -127,8 +124,6 @@ namespace ZdcSimpleRecAlgoImpl {
       }
     }
 
-    // LowGainEnergy not used currently
-    lowGEnergy = -99;
 
     double time = -9999;
     // Time based on regular energy
@@ -191,7 +186,7 @@ namespace ZdcSimpleRecAlgoImpl {
     }
 
     chargeWeightedTime = (tmp_TSWeightedEnergy / tmp_energy - 1) * 25.0;
-    auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
+    auto rh = RecHit(digi.id(), ampl, time, -99);
     rh.setEnergySOIp1(energySOIp1);
 
     if (maxI >= 0 && maxI < tool.size()) {
@@ -231,12 +226,12 @@ namespace ZdcSimpleRecAlgoImpl {
     int maxI = -1;
     double maxA = -1e10;
     double ta = 0;
-    double lowGEnergy = 0;
     double energySOIp1 = 0;
     double ratioSOIp1 = -1;
     double chargeWeightedTime = 0;
 
-    double noiseFrac = 97.0 / 256.0;
+    // out of time pileup fraction; ~40% of noise ts charge will be signal.  
+    double ootpuFrac = 97.0 / 256.0;
 
     double Allnoise = 0;
     int noiseslices = 0;
@@ -252,14 +247,13 @@ namespace ZdcSimpleRecAlgoImpl {
       float width = effPeds.getWidth(capid);
       if (CurrentTS >= digi_size)
         continue;
-      Allnoise += zdchelper::subPedestal(tool[CurrentTS], ped, width) * noiseFrac;
+      Allnoise += zdchelper::subPedestal(tool[CurrentTS], ped, width) * ootpuFrac;
       noiseslices++;
     }
     if (noiseslices != 0) {
       noise = (Allnoise) / double(noiseslices);
-    } else {
-      noise = 0;
     }
+    
     for (unsigned int ivs = 0; ivs < mySignalTS.size(); ++ivs) {
       CurrentTS = mySignalTS[ivs];
       if (CurrentTS >= digi_size)
@@ -285,8 +279,6 @@ namespace ZdcSimpleRecAlgoImpl {
       }
     }
 
-    // LowGainEnergy not used currently
-    lowGEnergy = -99;
 
     double time = -9999;
     // Time based on regular energy
@@ -348,7 +340,7 @@ namespace ZdcSimpleRecAlgoImpl {
     }
 
     chargeWeightedTime = (tmp_TSWeightedEnergy / tmp_energy - 1) * 25.0;
-    auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
+    auto rh = RecHit(digi.id(), ampl, time, -99);
     rh.setEnergySOIp1(energySOIp1);
 
     if (maxI >= 0 && maxI < tool.size()) {
@@ -385,7 +377,6 @@ namespace ZdcSimpleRecAlgoImpl {
     int maxI = -1;
     double maxA = -1e10;
     double ta = 0;
-    double lowGEnergy = 0;
     double energySOIp1 = 0;
     double ratioSOIp1 = -1;
     double chargeWeightedTime = 0;
@@ -414,8 +405,6 @@ namespace ZdcSimpleRecAlgoImpl {
     }
     if (noiseslices != 0) {
       noise = (Allnoise) / double(noiseslices);
-    } else {
-      noise = 0;
     }
 
     for (unsigned int ivs = 0; ivs < mySignalTS.size(); ++ivs) {
@@ -442,8 +431,6 @@ namespace ZdcSimpleRecAlgoImpl {
       }
     }
 
-    // LowGainEnergy not used currently
-    lowGEnergy = -99;
 
     double time = -9999;
     // Time based on regular energy
@@ -506,7 +493,7 @@ namespace ZdcSimpleRecAlgoImpl {
     }
 
     chargeWeightedTime = (tmp_TSWeightedEnergy / tmp_energy - 1) * 25.0;
-    auto rh = RecHit(digi.id(), ampl, time, lowGEnergy);
+    auto rh = RecHit(digi.id(), ampl, time, -99);
     rh.setEnergySOIp1(energySOIp1);
 
     if (maxI >= 0 && maxI < tool.size()) {

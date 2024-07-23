@@ -2,24 +2,24 @@
 #include "DataFormats/Common/interface/EDCollection.h"
 #include "DataFormats/Common/interface/Handle.h"
 #include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "CalibFormats/HcalObjects/interface/HcalCoderDb.h"
 #include "CalibFormats/HcalObjects/interface/HcalCalibrations.h"
-
 #include "CalibFormats/HcalObjects/interface/HcalDbService.h"
 #include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalSeverityLevelComputer.h"
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalSeverityLevelComputerRcd.h"
 #include "Geometry/CaloTopology/interface/HcalTopology.h"
 
+
+
 #include <iostream>
 
-#include "CalibFormats/HcalObjects/interface/HcalCalibrationWidths.h"
-#include "CondFormats/HcalObjects/interface/HcalPedestal.h"
 
 namespace zdchelper {
   void setZDCSaturation(ZDCRecHit rh, QIE10DataFrame& digi, int maxValue) {
-    unsigned int digisize = digi.size();
-    for (unsigned int i = 0; i < digisize; i++) {
+    for (unsigned int i = 0; i < digi.size(); i++) {
       if (digi[i].adc() >= maxValue) {
         rh.setFlagField(1, HcalCaloFlagLabels::ADCSaturationBit);
         break;
@@ -148,6 +148,35 @@ void ZdcHitReconstructor_Run3::produce(edm::Event& e, const edm::EventSetup& eve
   }  // else if (det_==DetId::Calo...)
 
 }  // void HcalHitReconstructor::produce(...)
+
+
+
+
+void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  // zdcreco
+  edm::ParameterSetDescription desc;
+  desc.add<double>("correctionPhaseNS", 0.0);
+  desc.add<edm::InputTag>("digiLabelQIE10ZDC", edm::InputTag("hcalDigis","ZDC"));
+  desc.add<std::string>("Subdetector", "ZDC");
+  desc.add<bool>("correctForPhaseContainment", false);
+  desc.add<bool>("correctForTimeslew", false);
+  desc.add<bool>("dropZSmarkedPassed", true);
+  desc.add<bool>("ignoreRPD", true);
+  desc.add<int>("recoMethod", 1);
+  desc.add<bool>("correctTiming", true);
+  desc.add<bool>("setNoiseFlags", true);
+  desc.add<bool>("setHSCPFlags", true);
+  desc.add<bool>("setSaturationFlags", true);
+  desc.add<bool>("setTimingTrustFlags", false);
+  {
+    edm::ParameterSetDescription psd0;
+    psd0.add<int>("maxADCvalue", 255);
+    desc.add<edm::ParameterSetDescription>("saturationParameters", psd0);
+  }
+  descriptions.add("zdcreco", desc);
+  // or use the following to generate the label from the module's C++ type
+  //descriptions.addWithDefaultLabel(desc);
+}
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(ZdcHitReconstructor_Run3);
