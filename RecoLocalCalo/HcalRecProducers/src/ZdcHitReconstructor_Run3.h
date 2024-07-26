@@ -62,15 +62,28 @@ private:
   HcalOtherSubdetector subdetOther_;
 
   edm::EDGetTokenT<QIE10DigiCollection> tok_input_QIE10;
-
-  bool correctTiming_;        // turn on/off Ken Rossato's algorithm to fix timing
-  bool setNoiseFlags_;        // turn on/off basic noise flags
-  bool setHSCPFlags_;         // turn on/off HSCP noise flags
+  
+  int correctionMethodEM_;
+  int correctionMethodHAD_;
+  int correctionMethodRPD_;
+  double ootpuRatioEM_;
+  double ootpuRatioHAD_;
+  double ootpuRatioRPD_;
+  double ootpuFracEM_;
+  double ootpuFracHAD_;
+  double ootpuFracRPD_;
+  std::vector<double> chargeRatiosEM_;
+  std::vector<double> chargeRatiosHAD_;
+  std::vector<double> chargeRatiosRPD_;
+  std::vector<unsigned int> bxTs_;
+  int nTs_;
+  bool forceSOI_;
+  std::vector<unsigned int> signalSOI_;
+  std::vector<unsigned int> noiseSOI_;
+  
   bool setSaturationFlags_;   // turn on/off flag indicating ADC saturation
-  bool setTimingTrustFlags_;  // turn on/off HF timing uncertainty flag
-
   bool dropZSmarkedPassed_;  // turn on/off dropping of zero suppression marked and passed digis
-  bool ignoreRPD_;           // ignore all channels but EM and HCAL if true
+  bool skipRPD_;           // ignore all channels but EM and HCAL if true
   int maxADCvalue_;          // max adc value for saturation Flag
 
   std::unique_ptr<HcalLongRecoParams> longRecoParams_;  //noiseTS and signalTS from db
