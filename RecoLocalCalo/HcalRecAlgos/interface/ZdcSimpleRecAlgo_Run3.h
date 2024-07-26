@@ -40,16 +40,19 @@ class ZdcSimpleRecAlgo_Run3 {
 public:
   /** Simple constructor for PMT-based detectors */
   ZdcSimpleRecAlgo_Run3(int recoMethod);
-  void initCorrectionMethod( const int method, const int ZdcSection);
-  void initTemplateFit(const std::vector<unsigned int>& bxTs, const std::vector<double>& chargeRatios, const int nTs,const int ZdcSection);
-  void initRatioSubtraction(const float ratio, const float frac,const int ZdcSection);
-  
+  void initCorrectionMethod(const int method, const int ZdcSection);
+  void initTemplateFit(const std::vector<unsigned int>& bxTs,
+                       const std::vector<double>& chargeRatios,
+                       const int nTs,
+                       const int ZdcSection);
+  void initRatioSubtraction(const float ratio, const float frac, const int ZdcSection);
+
   ZDCRecHit reco0(const QIE10DataFrame& digi,
-                      const HcalCoder& coder,
-                      const HcalCalibrations& calibs,
-                      const HcalPedestal& effPeds,
-                      const std::vector<unsigned int>& myNoiseTS,
-                      const std::vector<unsigned int>& mySignalTS) const;
+                  const HcalCoder& coder,
+                  const HcalCalibrations& calibs,
+                  const HcalPedestal& effPeds,
+                  const std::vector<unsigned int>& myNoiseTS,
+                  const std::vector<unsigned int>& mySignalTS) const;
   // reco method currently used to match L1 Trigger LUT energy formula
   ZDCRecHit reconstruct(const QIE10DataFrame& digi,
                         const std::vector<unsigned int>& myNoiseTS,
@@ -61,11 +64,11 @@ public:
 private:
   int recoMethod_;
   int nTs_;
-  std::map<int,std::vector<double>> templateFitValues_; // Values[ZdcSection][Ts]
-  std::map<int,bool> templateFitValid_; // Values[ZdcSection]
-  std::map<int,float> ootpuRatio_; // Values[ZdcSection]
-  std::map<int,float> ootpuFrac_; // Values[ZdcSection]
-  std::map<int,int> correctionMethod_; // Values[ZdcSection]
+  std::map<int, std::vector<double>> templateFitValues_;  // Values[ZdcSection][Ts]
+  std::map<int, bool> templateFitValid_;                  // Values[ZdcSection]
+  std::map<int, float> ootpuRatio_;                       // Values[ZdcSection]
+  std::map<int, float> ootpuFrac_;                        // Values[ZdcSection]
+  std::map<int, int> correctionMethod_;                   // Values[ZdcSection]
 };
 
 #endif

@@ -62,7 +62,7 @@ private:
   HcalOtherSubdetector subdetOther_;
 
   edm::EDGetTokenT<QIE10DigiCollection> tok_input_QIE10;
-  
+
   int correctionMethodEM_;
   int correctionMethodHAD_;
   int correctionMethodRPD_;
@@ -80,10 +80,10 @@ private:
   bool forceSOI_;
   std::vector<unsigned int> signalSOI_;
   std::vector<unsigned int> noiseSOI_;
-  
-  bool setSaturationFlags_;   // turn on/off flag indicating ADC saturation
+
+  bool setSaturationFlags_;  // turn on/off flag indicating ADC saturation
   bool dropZSmarkedPassed_;  // turn on/off dropping of zero suppression marked and passed digis
-  bool skipRPD_;           // ignore all channels but EM and HCAL if true
+  bool skipRPD_;             // ignore all channels but EM and HCAL if true
   int maxADCvalue_;          // max adc value for saturation Flag
 
   std::unique_ptr<HcalLongRecoParams> longRecoParams_;  //noiseTS and signalTS from db

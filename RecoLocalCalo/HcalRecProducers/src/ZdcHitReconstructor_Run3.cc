@@ -12,12 +12,10 @@
 #include "RecoLocalCalo/HcalRecAlgos/interface/HcalSeverityLevelComputerRcd.h"
 #include "Geometry/CaloTopology/interface/HcalTopology.h"
 
-
-
 #include <iostream>
 
 #include <Eigen/Dense>
- 
+
 #include <vector>
 namespace zdchelper {
   void setZDCSaturation(ZDCRecHit rh, QIE10DataFrame& digi, int maxValue) {
@@ -29,7 +27,6 @@ namespace zdchelper {
       }
     }
   }
-
 
 }  // namespace zdchelper
 
@@ -47,15 +44,15 @@ ZdcHitReconstructor_Run3::ZdcHitReconstructor_Run3(edm::ParameterSet const& conf
       ootpuRatioRPD_(conf.getParameter<double>("ootpuRatioRPD")),
       ootpuFracEM_(conf.getParameter<double>("ootpuFracEM")),
       ootpuFracHAD_(conf.getParameter<double>("ootpuFracHAD")),
-      ootpuFracRPD_(conf.getParameter<double>("ootpuFracRPD")),      
-      chargeRatiosEM_(conf.getParameter<std::vector<double>>("chargeRatiosEM")),      
-      chargeRatiosHAD_(conf.getParameter<std::vector<double>>("chargeRatiosHAD")),      
-      chargeRatiosRPD_(conf.getParameter<std::vector<double>>("chargeRatiosRPD")),      
+      ootpuFracRPD_(conf.getParameter<double>("ootpuFracRPD")),
+      chargeRatiosEM_(conf.getParameter<std::vector<double>>("chargeRatiosEM")),
+      chargeRatiosHAD_(conf.getParameter<std::vector<double>>("chargeRatiosHAD")),
+      chargeRatiosRPD_(conf.getParameter<std::vector<double>>("chargeRatiosRPD")),
       bxTs_(conf.getParameter<std::vector<unsigned int>>("bxTs")),
       nTs_(conf.getParameter<int>("nTs")),
-      forceSOI_(conf.getParameter<bool>("forceSOI")),      
-      signalSOI_(conf.getParameter<std::vector<unsigned int>>("signalSOI")),      
-      noiseSOI_(conf.getParameter<std::vector<unsigned int>>("noiseSOI")),      
+      forceSOI_(conf.getParameter<bool>("forceSOI")),
+      signalSOI_(conf.getParameter<std::vector<unsigned int>>("signalSOI")),
+      noiseSOI_(conf.getParameter<std::vector<unsigned int>>("noiseSOI")),
       setSaturationFlags_(conf.getParameter<bool>("setSaturationFlags")),
       dropZSmarkedPassed_(conf.getParameter<bool>("dropZSmarkedPassed")),
       skipRPD_(conf.getParameter<bool>("skipRPD")) {
@@ -81,12 +78,12 @@ ZdcHitReconstructor_Run3::ZdcHitReconstructor_Run3(edm::ParameterSet const& conf
   reco_.initCorrectionMethod(correctionMethodEM_, 1);
   reco_.initCorrectionMethod(correctionMethodHAD_, 2);
   reco_.initCorrectionMethod(correctionMethodRPD_, 4);
-  reco_.initTemplateFit(bxTs_, chargeRatiosEM_, nTs_,1);
-  reco_.initTemplateFit(bxTs_, chargeRatiosHAD_, nTs_,2);
-  reco_.initTemplateFit(bxTs_, chargeRatiosRPD_, nTs_,4);
-  reco_.initRatioSubtraction(ootpuRatioEM_, ootpuFracEM_,1);
-  reco_.initRatioSubtraction(ootpuRatioHAD_, ootpuFracHAD_,2);
-  reco_.initRatioSubtraction(ootpuRatioRPD_, ootpuFracRPD_,4);
+  reco_.initTemplateFit(bxTs_, chargeRatiosEM_, nTs_, 1);
+  reco_.initTemplateFit(bxTs_, chargeRatiosHAD_, nTs_, 2);
+  reco_.initTemplateFit(bxTs_, chargeRatiosRPD_, nTs_, 4);
+  reco_.initRatioSubtraction(ootpuRatioEM_, ootpuFracEM_, 1);
+  reco_.initRatioSubtraction(ootpuRatioHAD_, ootpuFracHAD_, 2);
+  reco_.initRatioSubtraction(ootpuRatioRPD_, ootpuFracRPD_, 4);
   // ES tokens
   htopoToken_ = esConsumes<HcalTopology, HcalRecNumberingRecord, edm::Transition::BeginRun>();
   paramsToken_ = esConsumes<HcalLongRecoParams, HcalLongRecoParamsRcd, edm::Transition::BeginRun>();
@@ -150,19 +147,20 @@ void ZdcHitReconstructor_Run3::produce(edm::Event& e, const edm::EventSetup& eve
       HcalCoderDb coder(*channelCoder, *shape);
 
       // pass the effective pedestals to rec hit since both ped value and width used in subtraction of pedestals
-      const HcalPedestal* effPeds = conditions->getEffectivePedestal(cell);      
+      const HcalPedestal* effPeds = conditions->getEffectivePedestal(cell);
 
-      if(forceSOI_)rec->push_back(reco_.reconstruct(QIE10_i, noiseSOI_, signalSOI_, coder, calibrations, *effPeds));
+      if (forceSOI_)
+        rec->push_back(reco_.reconstruct(QIE10_i, noiseSOI_, signalSOI_, coder, calibrations, *effPeds));
 
-      else{
-      const HcalLongRecoParam* myParams = longRecoParams_->getValues(detcell);
-         mySignalTS.clear();
-         myNoiseTS.clear();
-         mySignalTS = myParams->signalTS();
-         myNoiseTS = myParams->noiseTS();
+      else {
+        const HcalLongRecoParam* myParams = longRecoParams_->getValues(detcell);
+        mySignalTS.clear();
+        myNoiseTS.clear();
+        mySignalTS = myParams->signalTS();
+        myNoiseTS = myParams->noiseTS();
 
-         rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations, *effPeds));
-         }
+        rec->push_back(reco_.reconstruct(QIE10_i, myNoiseTS, mySignalTS, coder, calibrations, *effPeds));
+      }
       // saturationFlagSetter_ doesn't work with QIE10
       // created new function zdchelper::setZDCSaturation to work with QIE10
       (rec->back()).setFlags(0);
@@ -175,13 +173,10 @@ void ZdcHitReconstructor_Run3::produce(edm::Event& e, const edm::EventSetup& eve
 
 }  // void HcalHitReconstructor::produce(...)
 
-
-
-
 void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   // zdcreco
   edm::ParameterSetDescription desc;
-  desc.add<edm::InputTag>("digiLabelQIE10ZDC", edm::InputTag("hcalDigis","ZDC"));
+  desc.add<edm::InputTag>("digiLabelQIE10ZDC", edm::InputTag("hcalDigis", "ZDC"));
   desc.add<std::string>("Subdetector", "ZDC");
   desc.add<bool>("dropZSmarkedPassed", true);
   desc.add<bool>("skipRPD", true);
@@ -195,14 +190,43 @@ void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& 
   desc.add<double>("ootpuFracEM", 3.0);
   desc.add<double>("ootpuFracHAD", 3.0);
   desc.add<double>("ootpuFracRPD", 3.0);
-  desc.add<std::vector<double>>("chargeRatiosEM", { 1.0, 0.23157, 0.10477, 0.06312,});
-  desc.add<std::vector<double>>("chargeRatiosHAD", { 1.0, 0.23157, 0.10477, 0.06312,});
-  desc.add<std::vector<double>>("chargeRatiosRPD", { 1.0, 0.23157, 0.10477, 0.06312,});
-  desc.add<std::vector<unsigned int>>("bxTs", {0, 2, 4,});
+  desc.add<std::vector<double>>("chargeRatiosEM",
+                                {
+                                    1.0,
+                                    0.23157,
+                                    0.10477,
+                                    0.06312,
+                                });
+  desc.add<std::vector<double>>("chargeRatiosHAD",
+                                {
+                                    1.0,
+                                    0.23157,
+                                    0.10477,
+                                    0.06312,
+                                });
+  desc.add<std::vector<double>>("chargeRatiosRPD",
+                                {
+                                    1.0,
+                                    0.23157,
+                                    0.10477,
+                                    0.06312,
+                                });
+  desc.add<std::vector<unsigned int>>("bxTs",
+                                      {
+                                          0,
+                                          2,
+                                          4,
+                                      });
   desc.add<int>("nTs", 6);
   desc.add<bool>("forceSOI", false);
-  desc.add<std::vector<unsigned int>>("signalSOI", {2,});
-  desc.add<std::vector<unsigned int>>("noiseSOI", {1,});
+  desc.add<std::vector<unsigned int>>("signalSOI",
+                                      {
+                                          2,
+                                      });
+  desc.add<std::vector<unsigned int>>("noiseSOI",
+                                      {
+                                          1,
+                                      });
   desc.add<bool>("setSaturationFlags", false);
   {
     edm::ParameterSetDescription psd0;
@@ -213,7 +237,6 @@ void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& 
   // or use the following to generate the label from the module's C++ type
   //descriptions.addWithDefaultLabel(desc);
 }
-
 
 //define this as a plug-in
 DEFINE_FWK_MODULE(ZdcHitReconstructor_Run3);
