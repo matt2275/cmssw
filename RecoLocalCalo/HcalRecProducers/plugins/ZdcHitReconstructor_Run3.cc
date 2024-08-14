@@ -186,10 +186,10 @@ void ZdcHitReconstructor_Run3::fillDescriptions(edm::ConfigurationDescriptions& 
   desc.add<int>("correctionMethodRPD", 0);
   desc.add<double>("ootpuRatioEM", 3.0);
   desc.add<double>("ootpuRatioHAD", 3.0);
-  desc.add<double>("ootpuRatioRPD", 3.0);
-  desc.add<double>("ootpuFracEM", 3.0);
-  desc.add<double>("ootpuFracHAD", 3.0);
-  desc.add<double>("ootpuFracRPD", 3.0);
+  desc.add<double>("ootpuRatioRPD", -1.0);
+  desc.add<double>("ootpuFracEM", 1.0);
+  desc.add<double>("ootpuFracHAD", 1.0);
+  desc.add<double>("ootpuFracRPD", 0.0);
   desc.add<std::vector<double>>("chargeRatiosEM",
                                 {
                                     1.0,
