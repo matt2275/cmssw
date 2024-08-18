@@ -127,11 +127,13 @@ private:
   edm::InputTag m_jetInputTag;
   edm::InputTag m_sumInputTag;
   edm::InputTag m_sumZdcInputTag;
+  edm::InputTag m_CICADAInputTag;
   edm::EDGetTokenT<BXVector<l1t::EGamma>> m_egInputToken;
   edm::EDGetTokenT<BXVector<l1t::Tau>> m_tauInputToken;
   edm::EDGetTokenT<BXVector<l1t::Jet>> m_jetInputToken;
   edm::EDGetTokenT<BXVector<l1t::EtSum>> m_sumInputToken;
   edm::EDGetTokenT<BXVector<l1t::EtSum>> m_sumZdcInputToken;
+  edm::EDGetTokenT<BXVector<float>> m_CICADAInputToken;
 
   /// input tag for external conditions
   edm::InputTag m_extInputTag;
@@ -197,6 +199,9 @@ private:
 
   // switch to load muon showers in the global board
   bool m_useMuonShowers;
+
+  //switch to save axo scores in global board
+  bool m_produceAXOL1TLScore;
 };
 
 #endif  // L1TGlobalProducer_h

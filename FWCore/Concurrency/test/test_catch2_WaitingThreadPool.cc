@@ -123,10 +123,10 @@ TEST_CASE("Test WaitingThreadPool", "[edm::WaitingThreadPool") {
 
       {
         using namespace edm::waiting_task::chain;
-        auto h = first([&pool, &count](edm::WaitingTaskHolder h) {
+        auto h = first([&pool](edm::WaitingTaskHolder h) {
                    edm::WaitingTaskWithArenaHolder h2(std::move(h));
                    pool.runAsync(
-                       std::move(h2), [&count]() { throw std::runtime_error("error"); }, errorContext);
+                       std::move(h2), []() { throw std::runtime_error("error"); }, errorContext);
                  }) |
                  lastTask(edm::WaitingTaskHolder(group, &waitTask));
         h.doneWaiting(std::exception_ptr());

@@ -260,7 +260,7 @@ def checkHLTfor43774(process):
                     print('# TSG WARNING: check value of parameter "useAbs" in',filt,'(expect True but is False)!')
 
     return process
-    
+
 def customizeHLTfor44576(process):
     """Ensure TrackerAdditionalParametersPerDetRcd ESProducer is run when needed"""
     for esprod in esproducers_by_type(process, 'TrackerGeometricDetESModule'):
@@ -315,6 +315,7 @@ def customizeHLTfor45063(process):
                     
     return process
             
+
 # CMSSW version specific customizations
 def customizeHLTforCMSSW(process, menuType="GRun"):
 

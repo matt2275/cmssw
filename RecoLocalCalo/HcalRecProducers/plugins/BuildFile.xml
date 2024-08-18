@@ -17,3 +17,13 @@
 <library file="*.cc" name="RecoLocalCaloHcalRecProducersPlugin">
   <flags EDM_PLUGIN="1"/>
 </library>
+
+<library file="alpaka/*.cc" name="RecoLocalCaloHcalRecProducersPluginsPortable">
+  <use name="alpaka"/>    
+  <use name="DataFormats/DetId"/>
+  <use name="CondFormats/HcalObjects"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+  <flags ALPAKA_BACKENDS="1"/>
+  <flags EDM_PLUGIN="1"/>
+</library>

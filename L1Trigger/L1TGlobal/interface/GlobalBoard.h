@@ -39,6 +39,7 @@
 // Objects to produce for the output record.
 #include "DataFormats/L1TGlobal/interface/GlobalAlgBlk.h"
 #include "DataFormats/L1TGlobal/interface/GlobalExtBlk.h"
+#include "DataFormats/L1TGlobal/interface/AXOL1TLScore.h"
 
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -69,6 +70,7 @@ namespace l1t {
                                const edm::EDGetTokenT<BXVector<l1t::Jet>>&,
                                const edm::EDGetTokenT<BXVector<l1t::EtSum>>&,
                                const edm::EDGetTokenT<BXVector<l1t::EtSum>>&,
+                               const edm::EDGetTokenT<BXVector<float>>&,
                                const bool receiveEG,
                                const int nrL1EG,
                                const bool receiveTau,
@@ -76,7 +78,8 @@ namespace l1t {
                                const bool receiveJet,
                                const int nrL1Jet,
                                const bool receiveEtSums,
-                               const bool receiveEtSumsZdc);
+                               const bool receiveEtSumsZdc,
+                               const bool receiveCICADA);
 
     void receiveMuonObjectData(const edm::Event&,
                                const edm::EDGetTokenT<BXVector<l1t::Muon>>&,
@@ -89,6 +92,8 @@ namespace l1t {
                                      const int nrL1MuShower);
 
     void receiveExternalData(const edm::Event&, const edm::EDGetTokenT<BXVector<GlobalExtBlk>>&, const bool receiveExt);
+
+    void fillAXOScore(int iBxInEvent, std::unique_ptr<AXOL1TLScoreBxCollection>& AxoScoreRecord);
 
     /// initialize the class (mainly reserve)
     void init(const int numberPhysTriggers,
@@ -172,6 +177,8 @@ namespace l1t {
     /// pointer to External data list
     inline const BXVector<const GlobalExtBlk*>* getCandL1External() const { return m_candL1External; }
 
+    inline const float getCICADAScore() const { return m_cicadaScore; }
+
     /*  Drop individual EtSums for Now
     /// pointer to ETM data list
     inline const l1t::EtSum* getCandL1ETM() const
@@ -204,8 +211,12 @@ namespace l1t {
     void setResetPSCountersEachLumiSec(bool val) { m_resetPSCountersEachLumiSec = val; }
     void setSemiRandomInitialPSCounters(bool val) { m_semiRandomInitialPSCounters = val; }
 
+    void setCICADAScore(float val) { m_cicadaScore = val; }
+
   public:
     inline void setVerbosity(const int verbosity) { m_verbosity = verbosity; }
+
+    inline void enableAXOScoreSaving(bool savescore) { m_saveAXOScore = savescore; }
 
   private:
     // cached stuff
@@ -242,10 +253,17 @@ namespace l1t {
     int m_bxFirst_;
     int m_bxLast_;
 
+    float m_cicadaScore = 0.0;
+
     std::bitset<GlobalAlgBlk::maxPhysicsTriggers> m_gtlAlgorithmOR;
     std::bitset<GlobalAlgBlk::maxPhysicsTriggers> m_gtlDecisionWord;
 
     GlobalAlgBlk m_uGtAlgBlk;
+
+    //for optional software-only saving of axol1tl score
+    AXOL1TLScore m_uGtAXOScore;       //score dataformat
+    float m_storedAXOScore = -999.0;  //score from cond class
+    bool m_saveAXOScore = false;
 
     // cache of maps
     std::vector<AlgorithmEvaluation::ConditionEvaluationMap> m_conditionResultMaps;

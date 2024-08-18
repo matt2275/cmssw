@@ -54,5 +54,9 @@ HGCalUncalibRecHitL1Seeded = cms.EDProducer("HGCalUncalibRecHitProducer",
     ),
     HGCHFNosedigiCollection = cms.InputTag("hfnoseDigis","HFNose"),
     HGCHFNosehitCollection = cms.string('HGCHFNoseUncalibRecHits'),
+    computeLocalTime = cms.bool(False),
     algo = cms.string('HGCalUncalibRecHitWorkerWeights')
 )
+
+from Configuration.ProcessModifiers.ticl_v5_cff import ticl_v5
+ticl_v5.toModify(HGCalUncalibRecHitL1Seeded, computeLocalTime = cms.bool(True))

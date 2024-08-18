@@ -38,6 +38,7 @@
 #include "L1Trigger/L1TGlobal/interface/EnergySumTemplate.h"
 #include "L1Trigger/L1TGlobal/interface/EnergySumZdcTemplate.h"
 #include "L1Trigger/L1TGlobal/interface/AXOL1TLTemplate.h"
+#include "L1Trigger/L1TGlobal/interface/CICADATemplate.h"
 #include "L1Trigger/L1TGlobal/interface/ExternalTemplate.h"
 #include "L1Trigger/L1TGlobal/interface/CorrelationTemplate.h"
 #include "L1Trigger/L1TGlobal/interface/CorrelationThreeBodyTemplate.h"
@@ -55,6 +56,7 @@
 #include "L1Trigger/L1TGlobal/interface/EnergySumCondition.h"
 #include "L1Trigger/L1TGlobal/interface/EnergySumZdcCondition.h"
 #include "L1Trigger/L1TGlobal/interface/AXOL1TLCondition.h"
+#include "L1Trigger/L1TGlobal/interface/CICADACondition.h"
 #include "L1Trigger/L1TGlobal/interface/ExternalCondition.h"
 #include "L1Trigger/L1TGlobal/interface/CorrCondition.h"
 #include "L1Trigger/L1TGlobal/interface/CorrThreeBodyCondition.h"
@@ -76,6 +78,7 @@ l1t::GlobalBoard::GlobalBoard()
       m_currentLumi(0),
       m_isDebugEnabled(edm::isDebugEnabled()) {
   m_uGtAlgBlk.reset();
+  m_uGtAXOScore.reset();
 
   m_gtlAlgorithmOR.reset();
   m_gtlDecisionWord.reset();
@@ -144,6 +147,7 @@ void l1t::GlobalBoard::receiveCaloObjectData(const edm::Event& iEvent,
                                              const edm::EDGetTokenT<BXVector<l1t::Jet>>& jetInputToken,
                                              const edm::EDGetTokenT<BXVector<l1t::EtSum>>& sumInputToken,
                                              const edm::EDGetTokenT<BXVector<l1t::EtSum>>& sumZdcInputToken,
+                                             const edm::EDGetTokenT<BXVector<float>>& CICADAInputToken,
                                              const bool receiveEG,
                                              const int nrL1EG,
                                              const bool receiveTau,
@@ -151,7 +155,8 @@ void l1t::GlobalBoard::receiveCaloObjectData(const edm::Event& iEvent,
                                              const bool receiveJet,
                                              const int nrL1Jet,
                                              const bool receiveEtSums,
-                                             const bool receiveEtSumsZdc) {
+                                             const bool receiveEtSumsZdc,
+                                             const bool receiveCICADA) {
   if (m_verbosity) {
     LogDebug("L1TGlobal") << "\n**** Board receiving Calo Data ";
   }
@@ -342,6 +347,29 @@ void l1t::GlobalBoard::receiveCaloObjectData(const edm::Event& iEvent,
       }  //end loop over Bx
     }
   }
+  if (receiveCICADA) {
+    edm::Handle<BXVector<float>> cicadaScoreHandle;
+    iEvent.getByToken(CICADAInputToken, cicadaScoreHandle);
+    if (not cicadaScoreHandle.isValid()) {
+      if (m_verbosity) {
+        edm::LogWarning("L1Tglobal") << "\nWarning: Input tag for the CICADA score"
+                                     << "\nrequested in configuration, but not found in the event.\n"
+                                     << "\nSetting score to 0.0";
+      }
+      setCICADAScore(0.0);
+    } else if (cicadaScoreHandle->isEmpty(0)) {
+      if (m_verbosity) {
+        edm::LogWarning("L1Tglobal")
+            << "\nWarning: CICADA score had a valid input tag, but an empty BX collection"
+            << "\nThe CICADA score will be filled with 0.0 to prevent any failure of uGT emulation";
+      }
+      setCICADAScore(0.0);
+    } else {
+      setCICADAScore(cicadaScoreHandle->at(
+          0,
+          0));  //CICADA emulation will only provide a central BX, and one value. Unpacking may have more values, but that can't be guaranteed.
+    }
+  }
 }
 
 // receive data from Global Muon Trigger
@@ -490,6 +518,22 @@ void l1t::GlobalBoard::receiveExternalData(const edm::Event& iEvent,
       }    //end loop over bx
     }      //end if over valid ext data
   }        //end if ReceiveExt data
+}
+
+// fill axo score value per bx in event
+void l1t::GlobalBoard::fillAXOScore(int iBxInEvent, std::unique_ptr<AXOL1TLScoreBxCollection>& AxoScoreRecord) {
+  m_uGtAXOScore.reset();
+  m_uGtAXOScore.setbxInEventNr((iBxInEvent & 0xF));
+
+  //save stored condition score if Bx is zero, else set to 0
+  float scorevalue = 0.0;
+  if (iBxInEvent == 0) {
+    scorevalue = m_storedAXOScore;
+  }
+
+  //set dataformat value
+  m_uGtAXOScore.setAXOScore(scorevalue);
+  AxoScoreRecord->push_back(iBxInEvent, m_uGtAXOScore);
 }
 
 // run GTL
@@ -655,6 +699,12 @@ void l1t::GlobalBoard::runGTL(const edm::Event&,
 
           cMapResults[itCond->first] = axol1tlCondition;
 
+          //for optional software-only saving of axol1tl score
+          //m_storedAXOScore < 0.0 ensures only sets once per condition if score not default of -999
+          if (m_saveAXOScore && m_storedAXOScore < 0.0) {
+            m_storedAXOScore = axol1tlCondition->getScore();
+          }
+
           if (m_verbosity && m_isDebugEnabled) {
             std::ostringstream myCout;
             axol1tlCondition->print(myCout);
@@ -663,6 +713,21 @@ void l1t::GlobalBoard::runGTL(const edm::Event&,
           }
           //delete axol1tlCCondition;
 
+        } break;
+        case CondCICADA: {
+          CICADACondition* cicadaCondition = new CICADACondition(itCond->second, this);
+
+          cicadaCondition->setVerbosity(m_verbosity);
+          cicadaCondition->evaluateConditionStoreResult(iBxInEvent);
+
+          cMapResults[itCond->first] = cicadaCondition;
+
+          if (m_verbosity && m_isDebugEnabled) {
+            std::ostringstream myCout;
+            cicadaCondition->print(myCout);
+
+            edm::LogWarning("L1TGlobal") << "cicadaCondition " << myCout.str();
+          }
         } break;
 
         case CondExternal: {
@@ -1154,6 +1219,10 @@ void l1t::GlobalBoard::reset() {
 
   m_uGtAlgBlk.reset();
 
+  //reset AXO score
+  m_storedAXOScore = -999.0;
+  m_uGtAXOScore.reset();
+
   m_gtlDecisionWord.reset();
   m_gtlAlgorithmOR.reset();
 }
@@ -1177,6 +1246,7 @@ void l1t::GlobalBoard::resetCalo() {
   m_candL1Jet->clear();
   m_candL1EtSum->clear();
   m_candL1EtSumZdc->clear();
+  m_cicadaScore = 0.0;
 
   m_candL1EG->setBXRange(m_bxFirst_, m_bxLast_);
   m_candL1Tau->setBXRange(m_bxFirst_, m_bxLast_);
