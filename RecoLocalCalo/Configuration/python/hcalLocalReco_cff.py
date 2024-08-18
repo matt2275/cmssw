@@ -58,6 +58,13 @@ _run3_hcalLocalRecoTask.remove(hbheprereco)
 from Configuration.Eras.Modifier_run3_HB_cff import run3_HB
 run3_HB.toReplaceWith(hcalLocalRecoTask, _run3_hcalLocalRecoTask)
 
+import RecoLocalCalo.HcalRecProducers.zdcrecoRun3_cfi
+zdcrecoRun3 = RecoLocalCalo.HcalRecProducers.zdcrecoRun3_cfi.zdcrecoRun3.clone()
+_run3_hcalLocalRecoTask.remove(zdcreco)
+_run3_hcalLocalRecoTask.add(zdcrecoRun3)
+from Configuration.Eras.Modifier_run3_common_cff import run3_common
+run3_common.toReplaceWith(hcalLocalRecoTask, _run3_hcalLocalRecoTask)
+
 #--- Legacy HCAL Only Task
 hcalOnlyLegacyLocalRecoTask = hcalLocalRecoTask.copyAndExclude([zdcreco])
 
