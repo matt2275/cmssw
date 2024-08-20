@@ -46,3 +46,6 @@ from Configuration.Eras.Modifier_run3_upc_cff import run3_upc
                                       srcVertex = "offlinePrimaryVertices"
 )
 
+from Configuration.Eras.Modifier_run3_common_cff import run3_common
+run3_common.toModify(hiCentrality, srcZDChits = "zdcrecoRun3",lowGainZDC = False)
+
