@@ -110,8 +110,6 @@ calolocalrecoCosmicsNZS = cms.Sequence(calolocalrecoTaskCosmicsNZS)
 
 #--- for Run 3 and later
 _run3_hcalLocalRecoTask = _phase1_hcalLocalRecoTask.copy()
-_run3_hcalLocalRecoTask.remove(hbheprereco)
-
 from RecoLocalCalo.HcalRecProducers.zdcrecoRun3_cfi import zdcrecoRun3
 _run3_hcalLocalRecoTask.remove(zdcreco)
 _run3_hcalLocalRecoTask.add(zdcrecoRun3)
