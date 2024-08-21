@@ -43,24 +43,10 @@ upgradeKeys[2017] = [
 ]
 
 upgradeKeys[2026] = [
-    '2026D86',
-    '2026D86PU',
-    '2026D88',
-    '2026D88PU',
-    '2026D91',
-    '2026D91PU',
-    '2026D92',
-    '2026D92PU',
-    '2026D93',
-    '2026D93PU',
-    '2026D94',
-    '2026D94PU',
     '2026D95',
     '2026D95PU',
     '2026D96',
     '2026D96PU',
-    '2026D97',
-    '2026D97PU',
     '2026D98',
     '2026D98PU',
     '2026D99',
@@ -104,13 +90,12 @@ upgradeKeys[2026] = [
 # pre-generation of WF numbers
 numWFStart={
     2017: 10000,
-    2026: 20000,
+    2026: 23600,
 }
 numWFSkip=200
 # temporary measure to keep other WF numbers the same
 numWFConflict = [[14400,14800], #2022ReReco, 2022ReRecoPU (in 12_4)
-                 [20400,20800], #D87
-                 [21200,22000], #D89-D90
+                 [24400,24800], #D97
                  [50000,51000]]
 numWFAll={
     2017: [],
@@ -727,6 +712,44 @@ upgradeWFs['ticl_v5'] = UpgradeWorkflow_ticl_v5(
 upgradeWFs['ticl_v5'].step2 = {'--procModifiers': 'ticl_v5'}
 upgradeWFs['ticl_v5'].step3 = {'--procModifiers': 'ticl_v5'}
 upgradeWFs['ticl_v5'].step4 = {'--procModifiers': 'ticl_v5'}
+
+class UpgradeWorkflow_ticl_v5_superclustering(UpgradeWorkflow):
+    def setup_(self, step, stepName, stepDict, k, properties):
+        if 'RecoGlobal' in step:
+            stepDict[stepName][k] = merge([self.step3, stepDict[step][k]])
+        if 'HARVESTGlobal' in step:
+            stepDict[stepName][k] = merge([self.step4, stepDict[step][k]])
+    def condition(self, fragment, stepList, key, hasHarvest):
+        return (fragment=="ZEE_14" or 'Eta1p7_2p7' in fragment) and '2026' in key
+upgradeWFs['ticl_v5_superclustering_mustache_ticl'] = UpgradeWorkflow_ticl_v5_superclustering(
+    steps = [
+        'RecoGlobal',
+        'HARVESTGlobal'
+    ],
+    PU = [
+        'RecoGlobal',
+        'HARVESTGlobal'
+    ],
+    suffix = '_ticl_v5_mustache',
+    offset = 0.204,
+)
+upgradeWFs['ticl_v5_superclustering_mustache_ticl'].step3 = {'--procModifiers': 'ticl_v5,ticl_superclustering_mustache_ticl'}
+upgradeWFs['ticl_v5_superclustering_mustache_ticl'].step4 = {'--procModifiers': 'ticl_v5,ticl_superclustering_mustache_ticl'}
+
+upgradeWFs['ticl_v5_superclustering_mustache_pf'] = UpgradeWorkflow_ticl_v5_superclustering(
+    steps = [
+        'RecoGlobal',
+        'HARVESTGlobal'
+    ],
+    PU = [
+        'RecoGlobal',
+        'HARVESTGlobal'
+    ],
+    suffix = '_ticl_v5_mustache_pf',
+    offset = 0.205,
+)
+upgradeWFs['ticl_v5_superclustering_mustache_pf'].step3 = {'--procModifiers': 'ticl_v5,ticl_superclustering_mustache_pf'}
+upgradeWFs['ticl_v5_superclustering_mustache_pf'].step4 = {'--procModifiers': 'ticl_v5,ticl_superclustering_mustache_pf'}
 
 # Track DNN workflows
 class UpgradeWorkflow_trackdnn(UpgradeWorkflow):
@@ -2821,6 +2844,29 @@ upgradeWFs['SonicTriton'] = UpgradeWorkflow_SonicTriton(
     offset = 0.9001,
 )
 
+class UpgradeWorkflow_Phase2_HeavyIon(UpgradeWorkflow):
+    def setup_(self, step, stepName, stepDict, k, properties):
+        stepDict[stepName][k] = merge([{'--procModifiers': 'phase2_pp_on_AA'}, stepDict[step][k]])
+        if 'GenSim' in step:
+            stepDict[stepName][k] = merge([{'--conditions': stepDict[step][k]["--conditions"].replace('_13TeV',''), '-n': 1}, stepDict[stepName][k]])
+        elif 'Digi' in step:
+            stepDict[stepName][k] = merge([{'-s': stepDict[step][k]["-s"].replace("DIGI:pdigi_valid","DIGI:pdigi_hi"), '--pileup': 'HiMixNoPU'}, stepDict[stepName][k]])
+    def condition(self, fragment, stepList, key, hasHarvest):
+        return fragment=='HydjetQMinBias_5519GeV' and '2026' in key and 'PU' not in key
+
+upgradeWFs['Phase2_HeavyIon'] = UpgradeWorkflow_Phase2_HeavyIon(
+    steps = [
+        'GenSimHLBeamSpot',
+        'DigiTrigger',
+        'RecoGlobal',
+        'HARVESTGlobal',
+        'ALCAPhase2'
+    ],
+    PU = [],
+    suffix = '_hi',
+    offset = 0.85,
+)
+
 # check for duplicates in offsets or suffixes
 offsets  = [specialWF.offset for specialType,specialWF in upgradeWFs.items()]
 suffixes = [specialWF.suffix for specialType,specialWF in upgradeWFs.items()]
@@ -3370,5 +3416,6 @@ upgradeFragments = OrderedDict([
     ('LbToJpsiXiK0sPi_JMM_Filter_DGamma0_TuneCP5_13p6TeV-pythia8-evtgen_cfi',UpgradeFragment(Mby(50,500000),'LbToJpsiXiK0sPr_DGamma0_13p6TeV')), #0.6%
     ('OmegaMinus_13p6TeV_SoftQCDInel_TuneCP5_cfi',UpgradeFragment(Mby(100,1000000),'OmegaMinus_13p6TeV')), #0.1%
     ('Hydjet_Quenched_MinBias_5020GeV_cfi', UpgradeFragment(U2000by1,'HydjetQMinBias_5020GeV')),
-    ('Hydjet_Quenched_MinBias_5362GeV_cfi', UpgradeFragment(U2000by1,'HydjetQMinBias_5362GeV'))
+    ('Hydjet_Quenched_MinBias_5362GeV_cfi', UpgradeFragment(U2000by1,'HydjetQMinBias_5362GeV')),
+    ('Hydjet_Quenched_MinBias_5519GeV_cfi', UpgradeFragment(U2000by1,'HydjetQMinBias_5519GeV')),
 ])
