@@ -4,8 +4,8 @@
 # Input: miniAOD
 
 import FWCore.ParameterSet.Config as cms
-from Configuration.Eras.Era_Run3_cff import Run3
-process = cms.Process('HiForest', Run3)
+from Configuration.Eras.Era_Run3_2024_ppRef_cff import Run3_2024_ppRef
+process = cms.Process('HiForest', Run3_2024_ppRef)
 process.options = cms.untracked.PSet()
 
 #####################################################################################
@@ -13,7 +13,7 @@ process.options = cms.untracked.PSet()
 #####################################################################################
 
 process.load("HeavyIonsAnalysis.EventAnalysis.HiForestInfo_cfi")
-process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 140X, data")
+process.HiForestInfo.info = cms.vstring("HiForest, miniAOD, 141X, data")
 
 #####################################################################################
 # Input source
@@ -44,7 +44,7 @@ process.load('FWCore.MessageService.MessageLogger_cfi')
 #GlobalTag used in Prompt RECO
 #https://cms-conddb.cern.ch/cmsDbBrowser/list/Prod/gts/132X_dataRun3_Prompt_v3
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '140X_dataRun3_Prompt_v2', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '141X_dataRun3_Prompt_v3', '')
 process.HiForestInfo.GlobalTagLabel = process.GlobalTag.globaltag
 
 # TODO: Old calibration here, might need to update
@@ -120,6 +120,34 @@ process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 ####################################################################################
 
 #########################
+# ZDC RecHit Producer
+#########################
+# to prevent crash related to HcalSeverityLevelComputerRcd record
+process.load("RecoLocalCalo.HcalRecAlgos.hcalRecAlgoESProd_cfi")
+
+
+process.zdcrecoRun3 = cms.EDProducer('ZdcHitReconstructor_Run3')
+process.zdcrecoRun3.skipRPD = cms.bool(True)
+process.zdcrecoRun3.correctionMethodHAD = cms.int32(0) # 1 means Template Fit Method, 0 used ootpu Ratios/ Fracs
+process.zdcrecoRun3.correctionMethodEM = cms.int32(0)
+process.zdcrecoRun3.ootpuRatioHAD = cms.double(-1) # Any value less than 0 means the ootpuFrac is always used
+process.zdcrecoRun3.ootpuRatioEM = cms.double(-1) # Otherwise if Ts0/Ts1 < ootpuRatio ? Ts2 - Ts1 : Ts2 - ootpuFrac*Ts1 
+process.zdcrecoRun3.ootpuFracHAD = cms.double(1) # fraction of Ts1 subtracted from Ts2
+process.zdcrecoRun3.ootpuFracEM = cms.double(1)
+
+process.load('HeavyIonsAnalysis.ZDCAnalysis.ZDCRecHitAnalyzerHC_cfi')
+process.zdcanalyzer.ZDCRecHitSource = cms.InputTag("zdcrecoRun3")
+process.zdcanalyzer.ZDCDigiSource    = cms.InputTag('hcalDigis', 'ZDC')
+process.zdcanalyzer.doZdcRecHits = cms.bool(True)
+process.zdcanalyzer.doZdcDigis = cms.bool(True)
+process.zdcanalyzer.skipRPD = cms.bool(True)  # also skip RPD channels in the analyzer
+process.zdcanalyzer.doHardcodedRecHitsRPD = cms.bool(True) 
+process.zdcanalyzer.doHardcodedDigisRPD = cms.bool(True) 
+
+
+###############################################################################
+
+#########################
 # Main analysis list
 #########################
 
@@ -130,6 +158,8 @@ process.forest = cms.Path(
 #    process.hltobject +
     process.l1object +
     process.ggHiNtuplizer +
+    process.zdcrecoRun3 +
+    process.zdcanalyzer +
     process.trackSequencePP
 )
 
